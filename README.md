@@ -268,3 +268,7 @@ process, but any FFmpeg binary distributed with an executable retains its own
 license obligations. Review [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
 and the license information for the exact FFmpeg build before publishing a
 release.
+
+## License
+
+This project is licensed under the **MIT License**.
