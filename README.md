@@ -68,25 +68,25 @@ python bootstrap.py --force
 ### Convert
 
 ```text
-python media_tool_cli.py convert -f INPUT -e OUTPUT_EXTENSION -o OUTPUT
+python media_tool_cli.py convert -f INPUT -e OUTPUT_EXTENSION [-o OUTPUT]
 ```
 
 Convert an image:
 
 ```bash
-python media_tool_cli.py convert -f photo.webp -e png -o photo.png
+python media_tool_cli.py convert -f photo.webp -e png
 ```
 
 Convert audio:
 
 ```bash
-python media_tool_cli.py convert -f recording.wav -e mp3 -o recording.mp3
+python media_tool_cli.py convert -f recording.wav -e mp3
 ```
 
 Convert video:
 
 ```bash
-python media_tool_cli.py convert -f recording.mov -e mp4 -o recording.mp4
+python media_tool_cli.py convert -f recording.mov -e mp4
 ```
 
 Extract or convert a video's audio track:
@@ -94,6 +94,9 @@ Extract or convert a video's audio track:
 ```bash
 python media_tool_cli.py convert -f recording.mp4 -e flac -o soundtrack.flac
 ```
+
+If `--output` is omitted, the output filename ends in `_converted` and uses
+the requested output extension. An explicit path can still override the name.
 
 Image-to-audio, image-to-video, and audio-to-video conversion are not exposed
 because they require additional inputs such as a duration, audio track, or

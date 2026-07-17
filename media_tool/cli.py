@@ -6,6 +6,7 @@ from .cutting import process_cut
 from .errors import ToolError
 from .formats import (
     SUPPORTED_OUTPUT_EXTENSIONS,
+    default_converted_output_path,
     media_kind_from_extension,
     non_negative_seconds,
     normalize_output_extension,
@@ -26,10 +27,10 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 examples:
-  Convert an image:       python media_tool_cli.py convert -f photo.webp -e png -o photo.png
-  Convert audio:          python media_tool_cli.py convert -f song.wav -e mp3 -o song.mp3
-  Convert video:          python media_tool_cli.py convert -f clip.mov -e mp4 -o clip.mp4
-  Extract video audio:    python media_tool_cli.py convert -f clip.mp4 -e flac -o audio.flac
+  Convert an image:       python media_tool_cli.py convert -f photo.webp -e png
+  Convert audio:          python media_tool_cli.py convert -f song.wav -e mp3
+  Convert video:          python media_tool_cli.py convert -f clip.mov -e mp4
+  Extract video audio:    python media_tool_cli.py convert -f clip.mp4 -e flac
   Compress automatically: python media_tool_cli.py compress -f clip.mp4
   Compress to WebM:       python media_tool_cli.py compress -f clip.mp4 -o smaller.webm
   Remove first 10 sec:    python media_tool_cli.py cut -f clip.mp4 --before 10
@@ -63,12 +64,13 @@ notes:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 examples:
-  python media_tool_cli.py convert -f photo.png -e webp -o photo.webp
-  python media_tool_cli.py convert -f music.flac -e mp3 -o music.mp3
-  python media_tool_cli.py convert -f video.mkv -e mp4 -o video.mp4
+  python media_tool_cli.py convert -f photo.png -e webp
+  python media_tool_cli.py convert -f music.flac -e mp3
+  python media_tool_cli.py convert -f video.mkv -e mp4
   python media_tool_cli.py convert -f video.mp4 -e opus -o soundtrack.opus
 
 Images can convert to images, audio to audio, and video to video or audio.
+Without --output, the filename receives _converted and the selected extension.
 """,
     )
     convert.add_argument(
@@ -82,7 +84,10 @@ Images can convert to images, audio to audio, and video to video or audio.
         help="Output extension without a leading dot, such as png, mp3, mp4, or webm.",
     )
     convert.add_argument(
-        "-o", "--output", required=True, metavar="OUTPUT", help="Output file path."
+        "-o",
+        "--output",
+        metavar="OUTPUT",
+        help="Optional output file path.",
     )
 
     compress = subparsers.add_parser(
@@ -165,12 +170,14 @@ filename receives _cut. Cuts are re-encoded for frame-accurate results.
     return parser
 
 
-def process_convert(input_path: str, output_path: str, desired_ext: str) -> None:
+def process_convert(input_path: str, output_path: str | None, desired_ext: str) -> None:
     _, input_kind = validate_common_input(input_path)
     desired_ext = desired_ext.lower().lstrip(".")
     if desired_ext not in SUPPORTED_OUTPUT_EXTENSIONS:
         raise ToolError(f"The output extension '.{desired_ext}' is not supported.")
 
+    if not output_path:
+        output_path = default_converted_output_path(input_path, desired_ext)
     output_path = normalize_output_extension(output_path, desired_ext)
     validate_output_dir(output_path)
     validate_distinct_paths(input_path, output_path)

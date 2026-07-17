@@ -61,6 +61,12 @@ def default_compressed_output_path(input_path: str) -> str:
     return f"{base}_compressed{ext}"
 
 
+def default_converted_output_path(input_path: str, output_extension: str) -> str:
+    base, _ = os.path.splitext(input_path)
+    output_extension = output_extension.lower().lstrip(".")
+    return f"{base}_converted.{output_extension}"
+
+
 def default_cut_output_path(input_path: str) -> str:
     base, ext = os.path.splitext(input_path)
     return f"{base}_cut{ext}"
