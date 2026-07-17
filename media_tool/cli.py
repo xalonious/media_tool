@@ -26,15 +26,15 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 examples:
-  Convert an image:       python media_tool.py convert -f photo.webp -e png -o photo.png
-  Convert audio:          python media_tool.py convert -f song.wav -e mp3 -o song.mp3
-  Convert video:          python media_tool.py convert -f clip.mov -e mp4 -o clip.mp4
-  Extract video audio:    python media_tool.py convert -f clip.mp4 -e flac -o audio.flac
-  Compress automatically: python media_tool.py compress -f clip.mp4
-  Compress to WebM:       python media_tool.py compress -f clip.mp4 -o smaller.webm
-  Remove first 10 sec:    python media_tool.py cut -f clip.mp4 --before 10
-  Remove after 30 sec:    python media_tool.py cut -f clip.mp4 --after 30
-  Remove 10 through 20:   python media_tool.py cut -f clip.mp4 --between 10 20
+  Convert an image:       python media_tool_cli.py convert -f photo.webp -e png -o photo.png
+  Convert audio:          python media_tool_cli.py convert -f song.wav -e mp3 -o song.mp3
+  Convert video:          python media_tool_cli.py convert -f clip.mov -e mp4 -o clip.mp4
+  Extract video audio:    python media_tool_cli.py convert -f clip.mp4 -e flac -o audio.flac
+  Compress automatically: python media_tool_cli.py compress -f clip.mp4
+  Compress to WebM:       python media_tool_cli.py compress -f clip.mp4 -o smaller.webm
+  Remove first 10 sec:    python media_tool_cli.py cut -f clip.mp4 --before 10
+  Remove after 30 sec:    python media_tool_cli.py cut -f clip.mp4 --after 30
+  Remove 10 through 20:   python media_tool_cli.py cut -f clip.mp4 --between 10 20
 
 supported formats:
   Images: png, jpg/jpeg, bmp, gif, ico, tif/tiff, eps, pcx, webp,
@@ -63,10 +63,10 @@ notes:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 examples:
-  python media_tool.py convert -f photo.png -e webp -o photo.webp
-  python media_tool.py convert -f music.flac -e mp3 -o music.mp3
-  python media_tool.py convert -f video.mkv -e mp4 -o video.mp4
-  python media_tool.py convert -f video.mp4 -e opus -o soundtrack.opus
+  python media_tool_cli.py convert -f photo.png -e webp -o photo.webp
+  python media_tool_cli.py convert -f music.flac -e mp3 -o music.mp3
+  python media_tool_cli.py convert -f video.mkv -e mp4 -o video.mp4
+  python media_tool_cli.py convert -f video.mp4 -e opus -o soundtrack.opus
 
 Images can convert to images, audio to audio, and video to video or audio.
 """,
@@ -95,10 +95,10 @@ Images can convert to images, audio to audio, and video to video or audio.
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 examples:
-  python media_tool.py compress -f photo.jpg
-  python media_tool.py compress -f music.mp3 -o music_small.mp3
-  python media_tool.py compress -f video.mp4
-  python media_tool.py compress -f video.mp4 -o video_small.webm
+  python media_tool_cli.py compress -f photo.jpg
+  python media_tool_cli.py compress -f music.mp3 -o music_small.mp3
+  python media_tool_cli.py compress -f video.mp4
+  python media_tool_cli.py compress -f video.mp4 -o video_small.webm
 
 Without --output, the filename receives _compressed. WAV and AIFF inputs
 use FLAC as the default output so their PCM audio is compressed losslessly.
@@ -124,9 +124,9 @@ use FLAC as the default output so their PCM audio is compressed losslessly.
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 examples:
-  python media_tool.py cut -f video.mp4 --before 10
-  python media_tool.py cut -f video.mp4 --after 30 -o first_30_seconds.mp4
-  python media_tool.py cut -f video.mp4 --between 10 20 -o without_middle.mp4
+  python media_tool_cli.py cut -f video.mp4 --before 10
+  python media_tool_cli.py cut -f video.mp4 --after 30 -o first_30_seconds.mp4
+  python media_tool_cli.py cut -f video.mp4 --between 10 20 -o without_middle.mp4
 
 Timestamps are seconds and may contain decimals. Without --output, the output
 filename receives _cut. Cuts are re-encoded for frame-accurate results.

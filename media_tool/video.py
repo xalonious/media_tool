@@ -2,12 +2,15 @@ import json
 import math
 import os
 import subprocess
+import sys
+import threading
 
 from media_runtime import MediaRuntimeError, require_ffmpeg, require_ffprobe
 
 from .audio import audio_codec_arguments
 from .errors import ToolError
 from .formats import extension_from_path, media_kind_from_extension
+from .progress import finish_progress, progress_seconds, render_progress
 
 
 def video_codec_arguments(extension: str, compress: bool) -> list[str]:
@@ -94,21 +97,7 @@ def build_ffmpeg_arguments(
     return arguments
 
 
-def run_ffmpeg(arguments: list[str]) -> None:
-    try:
-        ffmpeg = require_ffmpeg()
-    except MediaRuntimeError as exc:
-        raise ToolError(str(exc)) from exc
-
-    command = [
-        str(ffmpeg),
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-y",
-        *arguments,
-    ]
-    print("Processing with FFmpeg...")
+def _run_ffmpeg_without_progress(command: list[str], output_path: str) -> None:
     try:
         result = subprocess.run(
             command,
@@ -123,8 +112,152 @@ def run_ffmpeg(arguments: list[str]) -> None:
     if result.returncode != 0:
         message = result.stderr.strip() or "FFmpeg exited without an error message."
         raise ToolError(f"FFmpeg failed:\n{message}")
-    if not os.path.isfile(arguments[-1]):
+    if not os.path.isfile(output_path):
         raise ToolError("FFmpeg reported success but did not create the output file.")
+
+
+def _collect_stream(stream, chunks: list[str]) -> None:
+    for line in stream:
+        chunks.append(line)
+
+
+def _run_ffmpeg_with_progress(
+    command: list[str],
+    output_path: str,
+    progress_total: float,
+) -> None:
+    try:
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except OSError as exc:
+        raise ToolError(f"FFmpeg could not be started: {exc}") from exc
+
+    assert process.stdout is not None
+    assert process.stderr is not None
+
+    stderr_chunks: list[str] = []
+    stderr_thread = threading.Thread(
+        target=_collect_stream,
+        args=(process.stderr, stderr_chunks),
+        daemon=True,
+    )
+    stderr_thread.start()
+
+    progress_shown = False
+    last_ratio = -1.0
+    speed: str | None = None
+    for raw_line in process.stdout:
+        key, _, value = raw_line.strip().partition("=")
+        if not key:
+            continue
+        if key == "speed":
+            speed = value.strip()
+            continue
+        seconds = progress_seconds(key, value)
+        if seconds is not None:
+            ratio = min(max(seconds / progress_total, 0.0), 1.0)
+            should_render = (
+                last_ratio < 0
+                or ratio - last_ratio >= 0.005
+                or (ratio >= 1.0 and last_ratio < 1.0)
+            )
+            if should_render:
+                render_progress(seconds, progress_total, speed)
+                progress_shown = True
+                last_ratio = ratio
+
+    returncode = process.wait()
+    stderr_thread.join()
+    if returncode != 0:
+        if progress_shown:
+            print(file=sys.stderr)
+        message = "".join(stderr_chunks).strip() or "FFmpeg exited without an error message."
+        raise ToolError(f"FFmpeg failed:\n{message}")
+
+    if progress_shown and last_ratio >= 1.0:
+        print(file=sys.stderr)
+    else:
+        finish_progress(progress_total)
+    if not os.path.isfile(output_path):
+        raise ToolError("FFmpeg reported success but did not create the output file.")
+
+
+def run_ffmpeg(arguments: list[str], progress_total: float | None = None) -> None:
+    try:
+        ffmpeg = require_ffmpeg()
+    except MediaRuntimeError as exc:
+        raise ToolError(str(exc)) from exc
+
+    command = [
+        str(ffmpeg),
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-nostats",
+        "-y",
+        *arguments,
+    ]
+    print("Processing with FFmpeg...")
+    if progress_total is None or not math.isfinite(progress_total) or progress_total <= 0:
+        _run_ffmpeg_without_progress(command, arguments[-1])
+        return
+
+    command[5:5] = ["-progress", "pipe:1"]
+    _run_ffmpeg_with_progress(command, arguments[-1], progress_total)
+
+
+def probe_media_duration(input_path: str) -> float:
+    try:
+        ffprobe = require_ffprobe()
+    except MediaRuntimeError as exc:
+        raise ToolError(str(exc)) from exc
+
+    command = [
+        str(ffprobe),
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        input_path,
+    ]
+    try:
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except OSError as exc:
+        raise ToolError(f"FFprobe could not be started: {exc}") from exc
+    if result.returncode != 0:
+        message = result.stderr.strip() or "FFprobe exited without an error message."
+        raise ToolError(f"Could not inspect the media:\n{message}")
+
+    try:
+        probe = json.loads(result.stdout)
+        duration = float(probe["format"]["duration"])
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise ToolError("Could not determine the media duration.") from exc
+    if not math.isfinite(duration) or duration <= 0:
+        raise ToolError("The media does not report a usable duration.")
+    return duration
+
+
+def try_probe_media_duration(input_path: str) -> float | None:
+    try:
+        return probe_media_duration(input_path)
+    except ToolError:
+        return None
 
 
 def probe_video(input_path: str) -> tuple[float, bool]:
@@ -182,5 +315,9 @@ def convert_audio_video(
     input_kind: str,
     output_path: str,
 ) -> None:
-    run_ffmpeg(build_ffmpeg_arguments(input_path, input_kind, output_path, False))
+    progress_total = try_probe_media_duration(input_path)
+    run_ffmpeg(
+        build_ffmpeg_arguments(input_path, input_kind, output_path, False),
+        progress_total,
+    )
     print(f"Successfully converted '{input_path}' to '{output_path}'.")

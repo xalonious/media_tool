@@ -20,6 +20,7 @@ and compression settings automatically.
 - Audio extraction from video files
 - Frame-accurate video cuts before, after, or between timestamps
 - Sensible compression presets for each output format
+- Progress bar for audio, video, and video-cut operations
 - Lossless WAV and AIFF compression to FLAC by default
 - Original size, output size, and space-saved reporting
 - Project-local FFmpeg and ffprobe installation
@@ -40,10 +41,10 @@ On Windows, invoke the source file through Python rather than launching the
 `.py` file directly:
 
 ```powershell
-python .\media_tool.py --help
+python .\media_tool_cli.py --help
 ```
 
-Running `.\media_tool.py` depends on the machine's Windows file association;
+Running `.\media_tool_cli.py` depends on the machine's Windows file association;
 some configurations route it through `pythonw.exe` and hide console output.
 
 Download the pinned FFmpeg build for your platform:
@@ -67,31 +68,31 @@ python bootstrap.py --force
 ### Convert
 
 ```text
-python media_tool.py convert -f INPUT -e OUTPUT_EXTENSION -o OUTPUT
+python media_tool_cli.py convert -f INPUT -e OUTPUT_EXTENSION -o OUTPUT
 ```
 
 Convert an image:
 
 ```bash
-python media_tool.py convert -f photo.webp -e png -o photo.png
+python media_tool_cli.py convert -f photo.webp -e png -o photo.png
 ```
 
 Convert audio:
 
 ```bash
-python media_tool.py convert -f recording.wav -e mp3 -o recording.mp3
+python media_tool_cli.py convert -f recording.wav -e mp3 -o recording.mp3
 ```
 
 Convert video:
 
 ```bash
-python media_tool.py convert -f recording.mov -e mp4 -o recording.mp4
+python media_tool_cli.py convert -f recording.mov -e mp4 -o recording.mp4
 ```
 
 Extract or convert a video's audio track:
 
 ```bash
-python media_tool.py convert -f recording.mp4 -e flac -o soundtrack.flac
+python media_tool_cli.py convert -f recording.mp4 -e flac -o soundtrack.flac
 ```
 
 Image-to-audio, image-to-video, and audio-to-video conversion are not exposed
@@ -101,22 +102,22 @@ video source.
 ### Compress
 
 ```text
-python media_tool.py compress -f INPUT [-o OUTPUT]
+python media_tool_cli.py compress -f INPUT [-o OUTPUT]
 ```
 
 Compress an image, audio file, or video:
 
 ```bash
-python media_tool.py compress -f photo.png
-python media_tool.py compress -f recording.mp3
-python media_tool.py compress -f recording.mp4
+python media_tool_cli.py compress -f photo.png
+python media_tool_cli.py compress -f recording.mp3
+python media_tool_cli.py compress -f recording.mp4
 ```
 
 The default output filename ends in `_compressed`. An explicit path can also
 change the output format:
 
 ```bash
-python media_tool.py compress -f recording.mp4 -o smaller.webm
+python media_tool_cli.py compress -f recording.mp4 -o smaller.webm
 ```
 
 WAV and AIFF inputs default to FLAC, preserving their audio losslessly while
@@ -132,19 +133,19 @@ silently discarding it.
 Remove everything before a timestamp:
 
 ```bash
-python media_tool.py cut -f recording.mp4 --before 10
+python media_tool_cli.py cut -f recording.mp4 --before 10
 ```
 
 Remove everything after a timestamp:
 
 ```bash
-python media_tool.py cut -f recording.mp4 --after 30 -o first_30_seconds.mp4
+python media_tool_cli.py cut -f recording.mp4 --after 30 -o first_30_seconds.mp4
 ```
 
 Remove the section between two timestamps and join the remaining pieces:
 
 ```bash
-python media_tool.py cut -f recording.mp4 --between 10 20 -o without_middle.mp4
+python media_tool_cli.py cut -f recording.mp4 --between 10 20 -o without_middle.mp4
 ```
 
 Timestamps are measured in seconds and may contain decimals. If `--output` is
@@ -191,7 +192,7 @@ python -m PyInstaller --noconfirm --clean --onefile `
   --add-binary "vendor/ffmpeg/ffmpeg.exe;vendor/ffmpeg" `
   --add-binary "vendor/ffmpeg/ffprobe.exe;vendor/ffmpeg" `
   --add-data "THIRD_PARTY_NOTICES.md;." `
-  media_tool.py
+  media_tool_cli.py
 ```
 
 Output: `dist\media-tool.exe`
@@ -206,7 +207,7 @@ python3 -m PyInstaller --noconfirm --clean --onefile \
   --add-binary "vendor/ffmpeg/ffmpeg:vendor/ffmpeg" \
   --add-binary "vendor/ffmpeg/ffprobe:vendor/ffmpeg" \
   --add-data "THIRD_PARTY_NOTICES.md:." \
-  media_tool.py
+  media_tool_cli.py
 ```
 
 Output: `dist/media-tool`

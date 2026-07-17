@@ -116,7 +116,16 @@ def process_cut(
     else:
         raise ToolError("Choose --before, --after, or --between.")
 
+    if mode == "before":
+        progress_total = duration - start
+    elif mode == "after":
+        progress_total = start
+    else:
+        assert end is not None
+        progress_total = duration - (end - start)
+
     run_ffmpeg(
-        build_cut_arguments(input_path, output_path, mode, start, end, has_audio)
+        build_cut_arguments(input_path, output_path, mode, start, end, has_audio),
+        progress_total,
     )
     print(f"Successfully cut '{input_path}' to '{output_path}'.")

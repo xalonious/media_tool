@@ -56,8 +56,6 @@ def media_kind_from_extension(extension: str) -> str | None:
 
 def default_compressed_output_path(input_path: str) -> str:
     base, ext = os.path.splitext(input_path)
-    # WAV and AIFF contain uncompressed PCM in normal use. FLAC gives them a
-    # useful lossless compression default instead of merely rewriting the PCM.
     if ext.lower() in {".wav", ".aif", ".aiff"}:
         ext = ".flac"
     return f"{base}_compressed{ext}"

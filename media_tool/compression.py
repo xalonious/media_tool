@@ -12,7 +12,7 @@ from .formats import (
     validate_output_dir,
 )
 from .images import compress_image
-from .video import build_ffmpeg_arguments, run_ffmpeg
+from .video import build_ffmpeg_arguments, run_ffmpeg, try_probe_media_duration
 
 
 def report_size_change(input_path: str, output_path: str, action: str) -> None:
@@ -35,7 +35,11 @@ def compress_audio_video(
     input_kind: str,
     output_path: str,
 ) -> None:
-    run_ffmpeg(build_ffmpeg_arguments(input_path, input_kind, output_path, True))
+    progress_total = try_probe_media_duration(input_path)
+    run_ffmpeg(
+        build_ffmpeg_arguments(input_path, input_kind, output_path, True),
+        progress_total,
+    )
     report_size_change(input_path, output_path, "compressed")
 
 
