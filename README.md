@@ -1,7 +1,7 @@
 # Media Tool
 
 A cross-platform command-line tool for converting and compressing images,
-audio, and video, as well as cutting sections from videos. Media Tool keeps a
+audio, and video, as well as cutting sections from audio and video. Media Tool keeps a
 single, predictable interface across each media type: Pillow handles images,
 while a project-local FFmpeg runtime handles audio and video.
 
@@ -18,9 +18,12 @@ and compression settings automatically.
 - Audio conversion between common lossy and lossless formats
 - Video conversion with container-appropriate video and audio codecs
 - Audio extraction from video files
-- Frame-accurate video cuts before, after, or between timestamps
+- Frame-accurate audio and video cuts before, after, or between timestamps
+- Batch processing through multiple paths, shell globs, and directories
+- Recursive directory scanning with mirrored output subdirectories
+- Compatibility preflight, per-file failure handling, and batch summaries
 - Sensible compression presets for each output format
-- Progress bar for audio, video, and video-cut operations
+- Progress bar for audio, video, and cutting operations
 - Lossless WAV and AIFF compression to FLAC by default
 - Original size, output size, and space-saved reporting
 - Project-local FFmpeg and ffprobe installation
@@ -68,31 +71,37 @@ python bootstrap.py --force
 ### Convert
 
 ```text
-python media_tool_cli.py convert -f INPUT -e OUTPUT_EXTENSION [-o OUTPUT]
+python media_tool_cli.py convert INPUT [INPUT ...] -e OUTPUT_EXTENSION
 ```
 
 Convert an image:
 
 ```bash
-python media_tool_cli.py convert -f photo.webp -e png
+python media_tool_cli.py convert photo.webp -e png
 ```
 
 Convert audio:
 
 ```bash
-python media_tool_cli.py convert -f recording.wav -e mp3
+python media_tool_cli.py convert recording.wav -e mp3
 ```
 
 Convert video:
 
 ```bash
-python media_tool_cli.py convert -f recording.mov -e mp4
+python media_tool_cli.py convert recording.mov -e mp4
 ```
 
 Extract or convert a video's audio track:
 
 ```bash
-python media_tool_cli.py convert -f recording.mp4 -e flac -o soundtrack.flac
+python media_tool_cli.py convert recording.mp4 -e flac -o soundtrack.flac
+```
+
+Convert every compatible image in a directory and mirror any subdirectories:
+
+```bash
+python media_tool_cli.py convert photos/ -e webp --recursive --output-dir converted/
 ```
 
 If `--output` is omitted, the output filename ends in `_converted` and uses
@@ -102,25 +111,35 @@ Image-to-audio, image-to-video, and audio-to-video conversion are not exposed
 because they require additional inputs such as a duration, audio track, or
 video source.
 
+Conversion follows this compatibility matrix:
+
+| Input | Image output | Audio output | Video output |
+| --- | --- | --- | --- |
+| Image | Yes | No | No |
+| Audio | No | Yes | No |
+| Video | No | Yes (extract audio) | Yes |
+
 ### Compress
 
 ```text
-python media_tool_cli.py compress -f INPUT [-o OUTPUT]
+python media_tool_cli.py compress INPUT [INPUT ...]
 ```
 
 Compress an image, audio file, or video:
 
 ```bash
-python media_tool_cli.py compress -f photo.png
-python media_tool_cli.py compress -f recording.mp3
-python media_tool_cli.py compress -f recording.mp4
+python media_tool_cli.py compress photo.png
+python media_tool_cli.py compress recording.mp3
+python media_tool_cli.py compress recording.mp4
+python media_tool_cli.py compress "*.png"
+python media_tool_cli.py compress media/ --recursive --output-dir compressed/
 ```
 
 The default output filename ends in `_compressed`. An explicit path can also
 change the output format:
 
 ```bash
-python media_tool_cli.py compress -f recording.mp4 -o smaller.webm
+python media_tool_cli.py compress recording.mp4 -o smaller.webm
 ```
 
 WAV and AIFF inputs default to FLAC, preserving their audio losslessly while
@@ -131,30 +150,56 @@ Compression cannot guarantee a smaller result when an input is already
 aggressively compressed. Media Tool reports when the output grows rather than
 silently discarding it.
 
-### Cut video
+### Cut audio and video
 
 Remove everything before a timestamp:
 
 ```bash
-python media_tool_cli.py cut -f recording.mp4 --before 10
+python media_tool_cli.py cut recording.mp4 --before 10
 ```
 
 Remove everything after a timestamp:
 
 ```bash
-python media_tool_cli.py cut -f recording.mp4 --after 30 -o first_30_seconds.mp4
+python media_tool_cli.py cut recording.mp4 --after 30 -o first_30_seconds.mp4
 ```
 
 Remove the section between two timestamps and join the remaining pieces:
 
 ```bash
-python media_tool_cli.py cut -f recording.mp4 --between 10 20 -o without_middle.mp4
+python media_tool_cli.py cut recording.mp4 --between 10 20 -o without_middle.mp4
+```
+
+The same operation works on audio and on mixed directories:
+
+```bash
+python media_tool_cli.py cut interview.mp3 --between 30 45
+python media_tool_cli.py cut recordings/ --after 60 --output-dir excerpts/
 ```
 
 Timestamps are measured in seconds and may contain decimals. If `--output` is
 omitted, the output keeps the input format and receives `_cut` in its filename.
-You may select another supported video format with the output extension. Cuts
-are re-encoded so the requested timestamps are frame-accurate.
+You may select another format of the same media type for a single output. Cuts
+are re-encoded so the requested timestamps are accurate.
+
+### Batch behavior
+
+All three commands accept positional files, glob patterns, and directories.
+The existing `-f/--file` form remains available and may be repeated. Directory
+searches include immediate files by default; add `--recursive` to include nested
+directories. Literal glob expansion is performed by Media Tool, so quoted globs
+also work on shells that do not expand them.
+
+When a directory or glob discovers an unsupported or incompatible file, Media
+Tool skips it with a reason and processes the remaining files. An incompatible
+file named explicitly is a preflight error. Add `--strict` to make discovered
+incompatibilities abort the batch as well.
+
+Use `-o/--output` only with a single explicit file. For batches, use
+`--output-dir`; nested input directories are mirrored below it. If neither is
+given, each output is written beside its source using the usual `_converted`,
+`_compressed`, or `_cut` suffix. Batch processing continues after individual
+runtime failures and exits nonzero after printing its summary if any file failed.
 
 ## Supported formats
 
