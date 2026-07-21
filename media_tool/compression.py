@@ -12,6 +12,7 @@ from .formats import (
     validate_output_dir,
 )
 from .images import compress_image
+from .quality import DEFAULT_QUALITY, validate_quality
 from .video import build_ffmpeg_arguments, run_ffmpeg, try_probe_media_duration
 
 
@@ -34,16 +35,22 @@ def compress_audio_video(
     input_path: str,
     input_kind: str,
     output_path: str,
+    quality: str = DEFAULT_QUALITY,
 ) -> None:
     progress_total = try_probe_media_duration(input_path)
     run_ffmpeg(
-        build_ffmpeg_arguments(input_path, input_kind, output_path, True),
+        build_ffmpeg_arguments(input_path, input_kind, output_path, True, quality),
         progress_total,
     )
     report_size_change(input_path, output_path, "compressed")
 
 
-def process_compress(input_path: str, output_path: str | None) -> None:
+def process_compress(
+    input_path: str,
+    output_path: str | None,
+    quality: str = DEFAULT_QUALITY,
+) -> None:
+    quality = validate_quality(quality)
     source_ext, input_kind = validate_common_input(input_path)
     if not output_path:
         output_path = default_compressed_output_path(input_path)
@@ -63,7 +70,7 @@ def process_compress(input_path: str, output_path: str | None) -> None:
     validate_output_dir(output_path)
     validate_distinct_paths(input_path, output_path)
     if input_kind == "image":
-        compress_image(input_path, output_path)
+        compress_image(input_path, output_path, quality)
         report_size_change(input_path, output_path, "compressed")
     else:
-        compress_audio_video(input_path, input_kind, output_path)
+        compress_audio_video(input_path, input_kind, output_path, quality)

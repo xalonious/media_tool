@@ -28,6 +28,7 @@ from .formats import (
     validate_output_dir,
 )
 from .images import convert_image
+from .quality import DEFAULT_QUALITY, QUALITY_LEVELS
 from .video import convert_audio_video
 
 
@@ -114,16 +115,29 @@ Without --output, the filename receives _converted and the selected extension.
         epilog="""
 examples:
   python media_tool_cli.py compress photo.jpg
+  python media_tool_cli.py compress photo.jpg --quality high
   python media_tool_cli.py compress media/ --recursive --output-dir compressed/
   python media_tool_cli.py compress -f music.mp3 -o music_small.mp3
-  python media_tool_cli.py compress -f video.mp4
+  python media_tool_cli.py compress -f video.mp4 --quality low
   python media_tool_cli.py compress -f video.mp4 -o video_small.webm
 
 Without --output, the filename receives _compressed. WAV and AIFF inputs
 use FLAC as the default output so their PCM audio is compressed losslessly.
+High quality favors fidelity, while low quality favors a smaller output.
 """,
     )
     _add_input_arguments(compress)
+    compress.add_argument(
+        "-q",
+        "--quality",
+        choices=QUALITY_LEVELS,
+        default=DEFAULT_QUALITY,
+        metavar="LEVEL",
+        help=(
+            "Compression quality: high, medium, or low (default: medium). "
+            "High favors fidelity; low favors smaller files."
+        ),
+    )
     compress.add_argument(
         "-o",
         "--output",
@@ -472,7 +486,9 @@ def main() -> int:
             return run_planned_batch(
                 planned,
                 skipped,
-                process_compress,
+                lambda source, output: process_compress(
+                    source, output, args.quality
+                ),
                 selection.batch_mode,
                 args.strict,
             )

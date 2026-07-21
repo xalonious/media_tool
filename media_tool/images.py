@@ -2,6 +2,7 @@ from PIL import Image
 
 from .errors import ToolError
 from .formats import extension_from_path
+from .quality import DEFAULT_QUALITY, quality_value
 
 
 PILLOW_FORMATS = {
@@ -38,7 +39,11 @@ def convert_image(input_path: str, output_path: str, output_format: str) -> None
     print(f"Successfully converted '{input_path}' to '{output_path}'.")
 
 
-def compress_image(input_path: str, output_path: str) -> None:
+def compress_image(
+    input_path: str,
+    output_path: str,
+    quality: str = DEFAULT_QUALITY,
+) -> None:
     output_ext = extension_from_path(output_path)
     try:
         with Image.open(input_path) as image:
@@ -52,14 +57,23 @@ def compress_image(input_path: str, output_path: str) -> None:
                 image.save(
                     output_path,
                     "JPEG",
-                    quality=85,
+                    quality=quality_value(
+                        quality, {"high": 92, "medium": 85, "low": 70}
+                    ),
                     optimize=True,
                     progressive=True,
                 )
             elif output_ext == "png":
                 image.save(output_path, "PNG", optimize=True, compress_level=9)
             elif output_ext == "webp":
-                image.save(output_path, "WEBP", quality=82, method=6)
+                image.save(
+                    output_path,
+                    "WEBP",
+                    quality=quality_value(
+                        quality, {"high": 90, "medium": 82, "low": 65}
+                    ),
+                    method=6,
+                )
             else:
                 try:
                     image.save(output_path, pillow_format(output_ext), optimize=True)

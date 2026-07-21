@@ -131,9 +131,19 @@ Compress an image, audio file, or video:
 python media_tool_cli.py compress photo.png
 python media_tool_cli.py compress recording.mp3
 python media_tool_cli.py compress recording.mp4
+python media_tool_cli.py compress recording.mp4 --quality high
 python media_tool_cli.py compress "*.png"
-python media_tool_cli.py compress media/ --recursive --output-dir compressed/
+python media_tool_cli.py compress media/ --quality low --recursive --output-dir compressed/
 ```
+
+Choose a compression preset with `--quality` (or `-q`):
+
+- `high` preserves more detail and usually creates a larger file.
+- `medium` is the default and preserves the tool's original compression settings.
+- `low` favors a smaller file at the cost of more quality loss.
+
+PNG, FLAC, WAV, and AIFF remain lossless regardless of this setting. The preset
+still applies to a video's lossy audio track when its video container uses one.
 
 The default output filename ends in `_compressed`. An explicit path can also
 change the output format:
