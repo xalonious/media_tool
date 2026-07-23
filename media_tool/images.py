@@ -1,38 +1,25 @@
 from PIL import Image
 
 from .errors import ToolError
+from .format_registry import pillow_format_for
 from .formats import extension_from_path
 from .quality import DEFAULT_QUALITY, quality_value
 
 
-PILLOW_FORMATS = {
-    "jpg": "JPEG",
-    "jpeg": "JPEG",
-    "tif": "TIFF",
-    "tiff": "TIFF",
-    "pgm": "PPM",
-    "pbm": "PPM",
-    "ppm": "PPM",
-}
-
-
-def pillow_format(extension: str) -> str:
-    return PILLOW_FORMATS.get(extension, extension.upper())
-
-
 def convert_image(input_path: str, output_path: str, output_format: str) -> None:
+    pillow_format = pillow_format_for(output_format)
     try:
         with Image.open(input_path) as image:
             print(
                 f"Opened image: {input_path} "
                 f"(Format: {image.format}, Mode: {image.mode})"
             )
-            if output_format in {"jpg", "jpeg"} and image.mode in {"RGBA", "P", "LA"}:
+            if pillow_format == "JPEG" and image.mode in {"RGBA", "P", "LA"}:
                 image = image.convert("RGB")
-            if output_format == "pdf":
+            if pillow_format == "PDF":
                 image.save(output_path, "PDF", resolution=100.0)
             else:
-                image.save(output_path, pillow_format(output_format))
+                image.save(output_path, pillow_format)
     except (OSError, ValueError) as exc:
         raise ToolError(f"Image conversion failed: {exc}") from exc
 
@@ -45,13 +32,14 @@ def compress_image(
     quality: str = DEFAULT_QUALITY,
 ) -> None:
     output_ext = extension_from_path(output_path)
+    pillow_format = pillow_format_for(output_ext)
     try:
         with Image.open(input_path) as image:
             print(
                 f"Opened image: {input_path} "
                 f"(Format: {image.format}, Mode: {image.mode})"
             )
-            if output_ext in {"jpg", "jpeg"}:
+            if pillow_format == "JPEG":
                 if image.mode in {"RGBA", "P", "LA"}:
                     image = image.convert("RGB")
                 image.save(
@@ -63,9 +51,9 @@ def compress_image(
                     optimize=True,
                     progressive=True,
                 )
-            elif output_ext == "png":
+            elif pillow_format == "PNG":
                 image.save(output_path, "PNG", optimize=True, compress_level=9)
-            elif output_ext == "webp":
+            elif pillow_format == "WEBP":
                 image.save(
                     output_path,
                     "WEBP",
@@ -76,8 +64,8 @@ def compress_image(
                 )
             else:
                 try:
-                    image.save(output_path, pillow_format(output_ext), optimize=True)
+                    image.save(output_path, pillow_format, optimize=True)
                 except TypeError:
-                    image.save(output_path, pillow_format(output_ext))
+                    image.save(output_path, pillow_format)
     except (OSError, ValueError) as exc:
         raise ToolError(f"Image compression failed: {exc}") from exc

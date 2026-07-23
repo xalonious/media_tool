@@ -52,11 +52,12 @@ examples:
   Remove 10 through 20:   python media_tool_cli.py cut -f clip.mp4 --between 10 20
 
 supported formats:
-  Images: png, jpg/jpeg, bmp, gif, ico, tif/tiff, eps, pcx, webp,
-          ppm/pgm/pbm, xbm, tga, msp, pdf (PSD is input-only)
-  Audio:  mp3, wav, flac, aac, m4a, ogg, opus, wma, aif/aiff, ac3
+  Images: png, jpg/jpeg/jpe/jfif, bmp/dib, gif, ico, tif/tiff, eps,
+          pcx, webp, ppm/pgm/pbm, xbm, tga, msp, pdf (PSD is input-only)
+  Audio:  mp3, wav, flac, aac, m4a, ogg/oga, opus, wma, aif/aiff,
+          ac3/eac3, caf, tta, wv
   Video:  mp4/m4v, mov, mkv, webm, avi, wmv, mpg/mpeg, flv,
-          ts/m2ts, ogv
+          ts/m2ts/mts, ogv, 3gp/3g2, vob
 
 notes:
   Audio and video operations require FFmpeg. Run python bootstrap.py once

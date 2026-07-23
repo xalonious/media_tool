@@ -3,28 +3,19 @@ import math
 import os
 
 from .errors import ToolError
+from .format_registry import FORMAT_REGISTRY, extensions_for, format_spec
 
 
-IMAGE_INPUT_EXTENSIONS = {
-    "png", "jpg", "jpeg", "bmp", "gif", "ico", "tiff", "tif", "eps",
-    "psd", "pcx", "webp", "ppm", "pgm", "pbm", "xbm", "tga", "msp",
-    "pdf",
+IMAGE_INPUT_EXTENSIONS = extensions_for("image")
+IMAGE_OUTPUT_EXTENSIONS = extensions_for("image", output_only=True)
+AUDIO_EXTENSIONS = extensions_for("audio")
+VIDEO_EXTENSIONS = extensions_for("video")
+SUPPORTED_INPUT_EXTENSIONS = set(FORMAT_REGISTRY)
+SUPPORTED_OUTPUT_EXTENSIONS = {
+    extension
+    for extension, spec in FORMAT_REGISTRY.items()
+    if spec.output_supported
 }
-IMAGE_OUTPUT_EXTENSIONS = IMAGE_INPUT_EXTENSIONS - {"psd"}
-AUDIO_EXTENSIONS = {
-    "mp3", "wav", "flac", "aac", "m4a", "ogg", "opus", "wma", "aif",
-    "aiff", "ac3",
-}
-VIDEO_EXTENSIONS = {
-    "mp4", "m4v", "mov", "mkv", "webm", "avi", "wmv", "mpg", "mpeg",
-    "flv", "ts", "m2ts", "ogv",
-}
-SUPPORTED_INPUT_EXTENSIONS = (
-    IMAGE_INPUT_EXTENSIONS | AUDIO_EXTENSIONS | VIDEO_EXTENSIONS
-)
-SUPPORTED_OUTPUT_EXTENSIONS = (
-    IMAGE_OUTPUT_EXTENSIONS | AUDIO_EXTENSIONS | VIDEO_EXTENSIONS
-)
 
 
 def human_bytes(n: int) -> str:
@@ -44,20 +35,15 @@ def extension_from_path(path: str) -> str:
 
 
 def media_kind_from_extension(extension: str) -> str | None:
-    extension = extension.lower().lstrip(".")
-    if extension in IMAGE_INPUT_EXTENSIONS:
-        return "image"
-    if extension in AUDIO_EXTENSIONS:
-        return "audio"
-    if extension in VIDEO_EXTENSIONS:
-        return "video"
-    return None
+    spec = format_spec(extension)
+    return spec.media_kind if spec else None
 
 
 def default_compressed_output_path(input_path: str) -> str:
     base, ext = os.path.splitext(input_path)
-    if ext.lower() in {".wav", ".aif", ".aiff"}:
-        ext = ".flac"
+    spec = format_spec(ext)
+    if spec and spec.default_compression_extension:
+        ext = f".{spec.default_compression_extension}"
     return f"{base}_compressed{ext}"
 
 

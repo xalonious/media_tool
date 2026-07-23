@@ -215,9 +215,9 @@ runtime failures and exits nonzero after printing its summary if any file failed
 
 | Type | Formats |
 | --- | --- |
-| Images | PNG, JPEG, BMP, GIF, ICO, TIFF, EPS, PSD input, PCX, WebP, PPM/PGM/PBM, XBM, TGA, MSP, PDF |
-| Audio | MP3, WAV, FLAC, AAC, M4A, Ogg/Vorbis, Opus, WMA, AIFF, AC-3 |
-| Video | MP4/M4V, MOV, MKV, WebM, AVI, WMV, MPEG, FLV, MPEG-TS/M2TS, Ogg Video |
+| Images | PNG, JPEG/JPE/JFIF, BMP/DIB, GIF, ICO, TIFF, EPS, PSD input, PCX, WebP, PPM/PGM/PBM, XBM, TGA, MSP, PDF |
+| Audio | MP3, WAV, FLAC, AAC, M4A, Ogg/OGA Vorbis, Opus, WMA, AIFF, AC-3/E-AC-3, CAF/ALAC, TTA, WavPack |
+| Video | MP4/M4V, MOV, MKV, WebM, AVI, WMV, MPEG, FLV, MPEG-TS/M2TS/MTS, Ogg Video, 3GP/3G2, VOB |
 
 Actual encoder availability depends on the selected FFmpeg build. The pinned
 bootstrap builds include the encoders used by Media Tool's presets, including

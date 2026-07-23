@@ -9,9 +9,10 @@ from media_runtime import MediaRuntimeError, require_ffmpeg, require_ffprobe
 
 from .audio import audio_codec_arguments
 from .errors import ToolError
+from .format_registry import encoder_arguments
 from .formats import extension_from_path, media_kind_from_extension
 from .progress import finish_progress, progress_seconds, render_progress
-from .quality import DEFAULT_QUALITY, compression_value
+from .quality import DEFAULT_QUALITY
 
 
 def video_codec_arguments(
@@ -19,134 +20,7 @@ def video_codec_arguments(
     compress: bool,
     quality: str = DEFAULT_QUALITY,
 ) -> list[str]:
-    if extension in {"mp4", "m4v", "mov", "mkv", "ts", "m2ts"}:
-        crf = compression_value(
-            compress, quality, conversion="20", high="23", medium="28", low="33"
-        )
-        audio_bitrate = compression_value(
-            compress,
-            quality,
-            conversion="192k",
-            high="192k",
-            medium="128k",
-            low="96k",
-        )
-        arguments = [
-            "-c:v", "libx264",
-            "-preset", "medium",
-            "-crf", crf,
-            "-pix_fmt", "yuv420p",
-            "-c:a", "aac",
-            "-b:a", audio_bitrate,
-        ]
-        if extension in {"mp4", "m4v", "mov"}:
-            arguments.extend(["-movflags", "+faststart"])
-        return arguments
-    if extension == "webm":
-        crf = compression_value(
-            compress, quality, conversion="28", high="28", medium="34", low="40"
-        )
-        audio_bitrate = compression_value(
-            compress,
-            quality,
-            conversion="128k",
-            high="128k",
-            medium="96k",
-            low="64k",
-        )
-        return [
-            "-c:v", "libvpx-vp9",
-            "-crf", crf,
-            "-b:v", "0",
-            "-c:a", "libopus",
-            "-b:a", audio_bitrate,
-        ]
-    if extension == "avi":
-        video_quality = compression_value(
-            compress, quality, conversion="3", high="3", medium="6", low="9"
-        )
-        audio_bitrate = compression_value(
-            compress,
-            quality,
-            conversion="192k",
-            high="192k",
-            medium="128k",
-            low="96k",
-        )
-        return [
-            "-c:v", "mpeg4",
-            "-q:v", video_quality,
-            "-c:a", "libmp3lame",
-            "-b:a", audio_bitrate,
-        ]
-    if extension == "wmv":
-        video_bitrate = compression_value(
-            compress, quality, conversion="2M", high="2M", medium="1M", low="600k"
-        )
-        audio_bitrate = compression_value(
-            compress,
-            quality,
-            conversion="192k",
-            high="192k",
-            medium="128k",
-            low="96k",
-        )
-        return [
-            "-c:v", "wmv2",
-            "-b:v", video_bitrate,
-            "-c:a", "wmav2",
-            "-b:a", audio_bitrate,
-        ]
-    if extension in {"mpg", "mpeg"}:
-        video_quality = compression_value(
-            compress, quality, conversion="3", high="3", medium="6", low="9"
-        )
-        audio_bitrate = compression_value(
-            compress,
-            quality,
-            conversion="192k",
-            high="192k",
-            medium="128k",
-            low="96k",
-        )
-        return [
-            "-c:v", "mpeg2video",
-            "-q:v", video_quality,
-            "-c:a", "mp2",
-            "-b:a", audio_bitrate,
-        ]
-    if extension == "flv":
-        video_quality = compression_value(
-            compress, quality, conversion="4", high="4", medium="7", low="10"
-        )
-        audio_bitrate = compression_value(
-            compress,
-            quality,
-            conversion="192k",
-            high="192k",
-            medium="128k",
-            low="96k",
-        )
-        return [
-            "-c:v", "flv1",
-            "-q:v", video_quality,
-            "-c:a", "aac",
-            "-b:a", audio_bitrate,
-        ]
-    if extension == "ogv":
-        video_quality = compression_value(
-            compress, quality, conversion="7", high="7", medium="5", low="3"
-        )
-        audio_quality = compression_value(
-            compress, quality, conversion="6", high="6", medium="4", low="2"
-        )
-        return [
-            "-c:v", "libtheora",
-            "-q:v", video_quality,
-            "-c:a", "libvorbis",
-            "-q:a", audio_quality,
-        ]
-    raise ToolError(f"No video encoder preset is configured for '.{extension}'.")
+    return encoder_arguments(extension, "video", compress, quality)
 
 
 def build_ffmpeg_arguments(
