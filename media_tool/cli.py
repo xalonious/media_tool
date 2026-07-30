@@ -50,6 +50,7 @@ examples:
   Remove first 10 sec:    python media_tool_cli.py cut clip.mp4 --before 10
   Remove after 30 sec:    python media_tool_cli.py cut -f clip.mp4 --after 30
   Remove 10 through 20:   python media_tool_cli.py cut -f clip.mp4 --between 10 20
+  Keep only 10 to 15:     python media_tool_cli.py cut -f clip.mp4 --keep 10 15
 
 supported formats:
   Images: png, jpg/jpeg/jpe/jfif, bmp/dib, gif, ico, tif/tiff, eps,
@@ -152,7 +153,8 @@ High quality favors fidelity, while low quality favors a smaller output.
         help="Remove a section from one or more audio or video files.",
         description=(
             "Remove everything before or after a timestamp, or remove the "
-            "section between two timestamps and join the remaining pieces."
+            "section between two timestamps and join the remaining pieces. "
+            "A selected range can also be kept while removing everything else."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -161,6 +163,7 @@ examples:
   python media_tool_cli.py cut media/ --after 30 --output-dir cut/
   python media_tool_cli.py cut -f video.mp4 --after 30 -o first_30_seconds.mp4
   python media_tool_cli.py cut -f video.mp4 --between 10 20 -o without_middle.mp4
+  python media_tool_cli.py cut -f video.mp4 --keep 10 15 -o excerpt.mp4
 
 Timestamps are seconds and may contain decimals. Without --output, the output
 filename receives _cut. Cuts are re-encoded for frame-accurate results.
@@ -193,6 +196,13 @@ filename receives _cut. Cuts are re-encoded for frame-accurate results.
         nargs=2,
         metavar=("START", "END"),
         help="Remove this time range and join the remaining pieces.",
+    )
+    cut_mode.add_argument(
+        "--keep",
+        type=non_negative_seconds,
+        nargs=2,
+        metavar=("START", "END"),
+        help="Keep only this time range and remove everything else.",
     )
 
     return parser
@@ -499,7 +509,7 @@ def main() -> int:
                 planned,
                 skipped,
                 lambda source, output: process_cut(
-                    source, output, args.before, args.after, args.between
+                    source, output, args.before, args.after, args.between, args.keep
                 ),
                 selection.batch_mode,
                 args.strict,

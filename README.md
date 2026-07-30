@@ -18,7 +18,7 @@ and compression settings automatically.
 - Audio conversion between common lossy and lossless formats
 - Video conversion with container-appropriate video and audio codecs
 - Audio extraction from video files
-- Frame-accurate audio and video cuts before, after, or between timestamps
+- Frame-accurate audio and video cuts before, after, between, or to a kept range
 - Batch processing through multiple paths, shell globs, and directories
 - Recursive directory scanning with mirrored output subdirectories
 - Compatibility preflight, per-file failure handling, and batch summaries
@@ -178,6 +178,12 @@ Remove the section between two timestamps and join the remaining pieces:
 
 ```bash
 python media_tool_cli.py cut recording.mp4 --between 10 20 -o without_middle.mp4
+```
+
+Keep only the section between two timestamps and remove everything else:
+
+```bash
+python media_tool_cli.py cut recording.mp4 --keep 10 15 -o excerpt.mp4
 ```
 
 The same operation works on audio and on mixed directories:

@@ -45,6 +45,14 @@ def build_cut_arguments(
             "-i", input_path, "-t", start_text, *codecs,
             "-map_metadata", "0", output_path,
         ]
+    if mode == "keep":
+        if end is None:
+            raise ValueError("A keep cut requires both start and end timestamps.")
+        duration_text = ffmpeg_seconds(end - start)
+        return [
+            "-ss", start_text, "-i", input_path, "-t", duration_text, *codecs,
+            "-map_metadata", "0", output_path,
+        ]
     if mode != "between" or end is None:
         raise ValueError("A between cut requires both start and end timestamps.")
 
@@ -84,6 +92,7 @@ def process_cut(
     before: float | None,
     after: float | None,
     between: list[float] | None,
+    keep: list[float] | None = None,
 ) -> None:
     source_ext, input_kind = validate_common_input(input_path)
     if input_kind not in {"audio", "video"}:
@@ -139,13 +148,27 @@ def process_cut(
             mode, start, end = "after", start, None
         else:
             mode = "between"
+    elif keep is not None:
+        start, end = keep
+        if start >= end:
+            raise ToolError("The --keep START timestamp must be before END.")
+        if end > duration + tolerance:
+            raise ToolError(
+                f"The --keep END timestamp exceeds the media duration "
+                f"({ffmpeg_seconds(duration)} seconds)."
+            )
+        end = min(end, duration)
+        mode = "keep"
     else:
-        raise ToolError("Choose --before, --after, or --between.")
+        raise ToolError("Choose --before, --after, --between, or --keep.")
 
     if mode == "before":
         progress_total = duration - start
     elif mode == "after":
         progress_total = start
+    elif mode == "keep":
+        assert end is not None
+        progress_total = end - start
     else:
         assert end is not None
         progress_total = duration - (end - start)
